@@ -1,0 +1,49 @@
+<html>
+<head>
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/jqueryui.js"></script>
+    <script type="text/javascript" src="js/lib/hammer.js"></script>
+    <script type="text/javascript" src="js/lib/jquery.hammer.js"></script>
+    <script type="text/javascript" src="js/myGame.js"></script>
+    <title>Block</title>
+    
+    <style>
+		body, html {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			font-family: Arial;
+			font-size: 20px
+		}
+		#game {
+			width: 100%;
+			height: 100%;
+		}
+		#plateau{
+			width : 200px;
+			height: 200px;
+			background: #fff;
+			border : solid 1px red;
+		}
+		.bloc{
+			position: absolute;
+			background-color: #000;
+			border: solid 1px red;
+			-moz-user-select: none;
+		    -khtml-user-select: none;
+		    -webkit-user-select: none;
+		    user-select: none;
+		}
+		.bloc.winner{
+			background-color: blue;
+		}
+    </style>
+    
+   
+</head>
+<body>
+	<div id="game">
+		<div id="plateau"></div>
+	</div>
+</body>
+</html>

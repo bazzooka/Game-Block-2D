@@ -1,0 +1,21 @@
+{
+    "game" : {
+        "level" : 1,
+        "pass" : "niveau1",
+        "blocks" : [{
+            "sens" : 1,
+            "size" : 2,
+            "position" : {
+                "x" : 0,
+                "y" : 0
+            } 
+        }, {
+            "sens" : 0,
+            "size" : 4,
+            "position" : {
+                "x" : 5,
+                "y" : 0
+            }
+        }]
+    }
+}
