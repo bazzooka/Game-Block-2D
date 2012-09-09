@@ -1,110 +1,13 @@
-var jsonFile = {
-    "game" : {
-        "level" : 1,
-        "pass" : "niveau1",
-        "blocks" : [{
-            "sens" : 0,
-            "size" : 2,
-            "position" : {
-                "x" : 0,
-                "y" : 0
-            } 
-        }, {
-            "sens" : 1,
-            "size" : 2,
-            "position" : {
-                "x" : 1,
-                "y" : 0
-            }
-        }, {
-            "sens" : 1,
-            "size" : 2,
-            "position" : {
-                "x" : 1,
-                "y" : 1
-            }
-        }, {
-            "sens" : 1,
-            "size" : 2,
-            "position" : {
-                "x" : 3,
-                "y" : 0
-            }
-        }, {
-            "sens" : 1,
-            "size" : 2,
-            "position" : {
-                "x" : 4,
-                "y" : 1
-            }
-        }, {
-            "sens" : 0,
-            "size" : 2,
-            "position" : {
-                "x" : 3,
-                "y" : 1
-            }
-        }, {
-            "sens" : 0,
-            "size" : 2,
-            "position" : {
-                "x" : 2,
-                "y" : 2
-            }
-        }, {
-            "sens" : 0,
-            "size" : 2,
-            "position" : {
-                "x" : 4,
-                "y" : 2
-            }
-        }, {
-            "sens" : 0,
-            "size" : 2,
-            "position" : {
-                "x" : 5,
-                "y" : 2
-            }
-        }, {
-            "sens" : 0,
-            "size" : 3,
-            "position" : {
-                "x" : 0,
-                "y" : 3
-            }
-        }, {
-            "sens" : 0,
-            "size" : 3,
-            "position" : {
-                "x" : 3,
-                "y" : 3
-            }
-        }, {
-            "sens" : 1,
-            "size" : 2,
-            "position" : {
-                "x" : 1,
-                "y" : 5
-            }
-        }, {
-            "sens" : 1,
-            "size" : 2,
-            "winner" : true,
-            "position" : {
-                "x" : 0,
-                "y" : 2
-            }
-        }]
-    }
-};
-
-
 var APP = {
+	level : 0,
+	bounceDelay : 350,
 	sizeW : 100,
 	sizeH : 100,	
 	uniteW : 0,
 	uniteH : 0,
 	subdivision : 6,
+	offsetX : 0,
+	offsetY : 0,
 	unikId : 0,
 	grille : {},
 	busyGride : [],
@@ -129,44 +32,62 @@ var APP = {
 		APP.uniteW = APP.sizeW / APP.subdivision;
 		APP.uniteH = APP.sizeH / APP.subdivision;
 		
+		APP.offsetX = $(APP.plateau).offset().left;
+		APP.offsetY = $(APP.plateau).offset().top;
+		
+		for(var i in APP.grille){
+			delete(APP.grille[i]);
+		}
+		
+		return true;
 	},
 	
-	getLevel : function(){
+	getLevel : function(level){
 		APP.JSONGameBlocks = null;
+		APP.level = level;
 		/* Warning : test sans serveur impossible avec getJSON
 		$.getJSON("json/level1.json?callback=?", function(data){
 			APP.JSONGameBlocks = data;
 			APP.drawGame();
+			$('#bestscore').html(APP.JSONGameBlocks.game.best);
 		});
 		*/
 		APP.JSONGameBlocks = jsonFile;
-		APP.drawGame();
+		$('#bestscore').html(APP.JSONGameBlocks.game[level].best);
+		APP.drawGame(level);
 		
+		return true;
 	},
 	
-	drawGame : function(){
+	drawGame : function(level){
 		var self = this;
 		console.log("Draw Game");
 		
 		// Delete all blocks
 		$('.bloc').remove();
 		
-		for(i in APP.JSONGameBlocks.game.blocks){
-			var id = self.drawBloc(APP.JSONGameBlocks.game.blocks[i]);
-			APP.JSONGameBlocks.game.blocks[i].elem = $('.monBloc'+id);
-			APP.grille[id] = APP.JSONGameBlocks.game.blocks[i];
+		for(i in APP.JSONGameBlocks.game[level].blocks){
+			var id = self.drawBloc(APP.JSONGameBlocks.game[level].blocks[i]);
+			APP.JSONGameBlocks.game[level].blocks[i].elem = $('.monBloc'+id);
+			APP.grille[id] = APP.JSONGameBlocks.game[level].blocks[i];
 		}
 		APP.fillBusyGride();
+		
+		// On positionne le tableau des résultats
+		$('#informations').css({'top': APP.offsetY, 'left' : $('#plateau').offset().left + $('#plateau').width()});
+		
+		
+		return true;
 	}, 
 	
 	drawBloc : function(bloc){
 		var className = 'monBloc' + APP.unikId;
 		var winner = bloc.winner ? ' winner' : '';
 		var monBloc = '<div class="bloc ' + className + winner + '" data-id="' + APP.unikId + '"/>';
-		var left = bloc.position.x * APP.uniteW;
-		var top = bloc.position.y * APP.uniteH;
-		var width = bloc.sens ? bloc.size * APP.uniteW : APP.uniteW;
-		var height = !bloc.sens ? bloc.size * APP.uniteH : APP.uniteH;
+		var left = bloc.position.x * APP.uniteW ;//+ APP.offsetX;
+		var top = bloc.position.y * APP.uniteH ;//+ APP.offsetY;
+		var width = bloc.sens ? bloc.size * APP.uniteW: APP.uniteW;
+		var height = !bloc.sens ? bloc.size * APP.uniteH: APP.uniteH;
 		$(APP.plateau).append(monBloc);
 		$('.' + className).css({left:left, top:top, width:width, height:height});
 		return APP.unikId++;
@@ -189,9 +110,9 @@ var APP = {
 			}
 		});
 		
-		$('#game').hammer({
+		APP.is_touch_device && $('#game').hammer({
             prevent_default: false
-       }).on({
+	   }).on({
 			'dragstart' : function(evt){
 				evt.preventDefault();
 				APP.mouseDown(evt);
@@ -212,6 +133,8 @@ var APP = {
 				APP.resizePage(evt);
 			}
 		})
+		
+		return true;
 	},
 	
 	mouseDown : function(evt){
@@ -244,7 +167,7 @@ var APP = {
 			var self = this;
 			APP.move(APP.currentMove.drag_elem, evt.pageX, evt.pageY);
 		}
-		return false;
+		return true;
 	},
 	
 	move : function(elem, posX, posY){
@@ -256,7 +179,7 @@ var APP = {
 		var bloc = APP.grille[id];
 		
 		if(bloc.sens){							// Move object horizontaly
-			var nextPos = ($(elem).offset().left << 0) - deltaX;
+			var nextPos = ($(elem).offset().left << 0) - deltaX - APP.offsetX;
 			
 			if(nextPos > APP.currentMove.maxRealX){
 				nextPos = APP.currentMove.maxRealX;
@@ -265,7 +188,7 @@ var APP = {
 			}
 			$(elem).css('left', nextPos);
 		} else {								// Move object vertically
-			var nextPos = ($(elem).offset().top << 0) - deltaY;
+			var nextPos = ($(elem).offset().top << 0) - deltaY - APP.offsetY;
 			
 			if(nextPos > APP.currentMove.maxRealY){
 				nextPos = APP.currentMove.maxRealY;
@@ -275,9 +198,10 @@ var APP = {
 			$(elem).css('top', nextPos);
 		}
 		
-		// TODO A SUPPRMER ?
 		APP.oldPosition.x = posX
 		APP.oldPosition.y = posY;
+		
+		return true;
 	},
 	
 	getBlocByElem : function(elem){
@@ -320,7 +244,7 @@ var APP = {
 		// Limite à gauche
 		newBound = false;
 		if(block.position.x > 0 && APP.busyGride[block.position.x - 1][block.position.y] != 1){
-			for(var i=block.position.x - 1; i > 0; i-- ){
+			for(var i=block.position.x - 1; i >= 0; i-- ){
 				if(APP.busyGride[i][block.position.y] == 1){
 					minX = i + 1;
 					newBound = true;
@@ -356,7 +280,7 @@ var APP = {
 		// Limite en haut
 		newBound = false;
 		if(block.position.y > 0 && APP.busyGride[block.position.x][block.position.y - 1] != 1){
-			for(var i=block.position.y - 1 ; i > 0; i-- ){
+			for(var i=block.position.y - 1 ; i >= 0; i-- ){
 				if(APP.busyGride[block.position.x][i] == 1){
 					minY = i + 1;
 					newBound = true;
@@ -399,7 +323,7 @@ var APP = {
 	
 	moveToNearXPosition : function(elem){
 		// Move to the near fixed position
-		var curr_pos = $(elem).offset().left;
+		var curr_pos = $(elem).offset().left - APP.offsetX;
 		var minDiff = APP.sizeW;
 		var minCur = 0;
 		var id = $(elem).attr('data-id');
@@ -426,11 +350,12 @@ var APP = {
 		
 		$(elem).stop().animate({
 			left: minCur
-		}, 100, "linear");	},
+		}, APP.bounceDelay, "easeOutElastic");
+		return true;	},
 	
 	moveToNearYPosition : function(elem){
 		// Move to the near fixed position
-		var curr_pos = $(elem).offset().top;
+		var curr_pos = $(elem).offset().top - APP.offsetY;
 		var minDiff = APP.sizeW;
 		var minCur = 0;
 		var id = $(elem).attr('data-id');
@@ -451,11 +376,13 @@ var APP = {
 		
 		$(elem).stop().animate({
 			top: minCur
-		}, 100, "linear");
+		}, APP.bounceDelay, "easeOutElastic");
+		return true;
 	},
 	
 	fillBusyGride : function(){
 		APP.busyGride = new Array(APP.subdivision);
+		var isWin = false;
 		for(var i = 0 ; i < APP.subdivision; i++){
 			APP.busyGride[i] = new Array(APP.subdivision);
 		}
@@ -463,8 +390,14 @@ var APP = {
 		for(bl in APP.grille){
 			var blockTmp = APP.grille[bl]
 			if(blockTmp.sens){
-				for(var i = blockTmp.position.x; i < blockTmp.position.x + blockTmp.size; i++){
-					APP.busyGride[i][blockTmp.position.y] = 1;
+				try{
+					for(var i = blockTmp.position.x; i < blockTmp.position.x + blockTmp.size; i++){
+						APP.busyGride[i][blockTmp.position.y] = 1;
+					}
+				} catch(e){
+					if(APP.move_count > 0){
+						isWin = true;
+					}
 				}
 			} else{
 				for(var i = blockTmp.position.y; i < blockTmp.position.y + blockTmp.size; i++){
@@ -472,6 +405,18 @@ var APP = {
 				}
 			}
 		}
+		
+		isWin && APP.nextLevel();
+		isWin = false;
+		
+		return true;
+	},
+	
+	nextLevel : function(){
+		alert("Le mot de passe du niveau est : " + APP.JSONGameBlocks.game[APP.level].pass);
+		
+		APP.initGame();
+		APP.getLevel(APP.level+1);
 	},
 	
 	resizePage : function (evt){
@@ -488,14 +433,16 @@ var APP = {
 			APP.sizeW = width - 10;
 			APP.sizeH = width - 10;
 		}
+
 		APP.initGame();
-		APP.drawGame();
+		APP.drawGame(APP.level);
+		
 		
 	},
 	
 	updateMoveCount : function(){
-		console.log("update move count");
 		APP.move_count ++;
+		$('#move_count').html(APP.move_count);
 	}
 };
 
@@ -503,8 +450,8 @@ var APP = {
 $(document).ready(function() {
 	$.event.props.push('dataTransfer');
 	APP.initGame();
-	APP.getLevel();
-	//APP.drawGame();
+	APP.getLevel(0);
+
 	APP.initEvents();
 	APP.resizePage();
 });
