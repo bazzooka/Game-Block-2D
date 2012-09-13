@@ -1,4 +1,5 @@
 var APP = {
+	etape : 0,
 	level : 0,
 	bounceDelay : 350,
 	sizeW : 100,
@@ -38,8 +39,20 @@ var APP = {
 		for(var i in APP.grille){
 			delete(APP.grille[i]);
 		}
+		//APP.fillBusyGride();
+		
+		if(APP.etape > 0){
+			APP.getLevel(APP.level);
+		} else {
+			APP.drawIntro();
+		}
 		
 		return true;
+	},
+	
+	drawIntro : function(){
+		$('#game, #plateau, #informations').css('left', $(window).width());
+		
 	},
 	
 	getLevel : function(level){
@@ -71,7 +84,7 @@ var APP = {
 			APP.JSONGameBlocks.game[level].blocks[i].elem = $('.monBloc'+id);
 			APP.grille[id] = APP.JSONGameBlocks.game[level].blocks[i];
 		}
-		APP.fillBusyGride();
+		//APP.fillBusyGride();
 		
 		// On positionne le tableau des résultats
 		$('#informations').css({'top': APP.offsetY, 'left' : $('#plateau').offset().left + $('#plateau').width()});
@@ -110,8 +123,15 @@ var APP = {
 			}
 		});
 		
+		$(document).on('touchstart', function(evt){
+			evt.preventDefault();
+			return false;
+		});
+		
 		APP.is_touch_device && $('#game').hammer({
-            prevent_default: false
+            prevent_default: false, 
+            swipe_time : 1, 
+            drag_min_distance : 5
 	   }).on({
 			'dragstart' : function(evt){
 				evt.preventDefault();
@@ -129,12 +149,49 @@ var APP = {
 		
 		$(window).on({
 			'resize' : function (evt){
-				console.log("resze");
+				console.log("resize");
 				APP.resizePage(evt);
 			}
 		})
 		
+		$('#submit').on('click', function(){
+			var niveau = APP.checkPassword($('#password').val());
+			if(niveau >= 0){
+				APP.niveau = niveau;
+				APP.getLevel(niveau);
+				$('#intro').stop(true).animate({
+					left: $(window).width()*2
+				}, APP.bounceDelay, "easeOutElastic", replacePlateau);
+				$('#game, #plateau, #informations').stop(true).animate({
+					left: 0
+				}, APP.bounceDelay, "easeOutElastic", replacePlateau);
+				
+				// setTimeout(function(){
+					// APP.resizePage();
+				// }, 1000);
+			} else {
+				console.log("Essaye encore");
+			}
+			
+			function replacePlateau(){
+				APP.resizePage();
+			}
+			
+		});
+		
 		return true;
+	},
+	
+	checkPassword : function(password){
+		var niveau = -1;
+		
+		$.each(jsonFile.game, function(index, value){
+			if(value.pass == password){
+				niveau = parseInt(value.level) + 1;
+				APP.etape = 1;
+			}
+		});
+		return niveau
 	},
 	
 	mouseDown : function(evt){
@@ -348,7 +405,7 @@ var APP = {
 		*/
 		APP.fillBusyGride();
 		
-		$(elem).stop().animate({
+		$(elem).stop(true).animate({
 			left: minCur
 		}, APP.bounceDelay, "easeOutElastic");
 		return true;	},
@@ -374,7 +431,7 @@ var APP = {
 		APP.grille[id].position.y = Math.round(minCur / APP.uniteH);
 		APP.fillBusyGride();
 		
-		$(elem).stop().animate({
+		$(elem).stop(true).animate({
 			top: minCur
 		}, APP.bounceDelay, "easeOutElastic");
 		return true;
@@ -406,17 +463,23 @@ var APP = {
 			}
 		}
 		
-		isWin && APP.nextLevel();
-		isWin = false;
+		if(isWin){
+			APP.busyGride = new Array(APP.subdivision);
+			var isWin = false;
+			for(var i = 0 ; i < APP.subdivision; i++){
+				APP.busyGride[i] = new Array(APP.subdivision);
+			}
+			APP.nextLevel();
+		}
 		
 		return true;
 	},
 	
 	nextLevel : function(){
 		alert("Le mot de passe du niveau est : " + APP.JSONGameBlocks.game[APP.level].pass);
-		
+		APP.level++;
 		APP.initGame();
-		APP.getLevel(APP.level+1);
+		//APP.getLevel(APP.level+1);
 	},
 	
 	resizePage : function (evt){
@@ -450,9 +513,9 @@ var APP = {
 $(document).ready(function() {
 	$.event.props.push('dataTransfer');
 	APP.initGame();
-	APP.getLevel(0);
 
 	APP.initEvents();
-	APP.resizePage();
+	
+	APP.etape > 0 && APP.resizePage();
 });
 
